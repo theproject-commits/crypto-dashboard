@@ -95,9 +95,13 @@ O projeto será desenvolvido utilizando uma arquitetura de monorepo, separando o
 - O script `populate_db.py` é responsável por criar as tabelas no banco de dados e popular com os dados mais recentes da CoinGecko.
 - **Atenção:** Antes de rodar, certifique-se que seu arquivo `server/.env` está configurado corretamente.
 
-- Para executar o script, rode o seguinte comando a partir da raiz do projeto (com o venv ativado):
+- Para executar o script, rode um dos seguintes comandos a partir da raiz do projeto (com o venv ativado):
   ```bash
+  # Opção 1: Executar como módulo Python
   python -m server.src.scripts.populate_db
+  
+  # Opção 2: Executar o script diretamente
+  python server/src/scripts/populate_db.py
   ```
 - **Nota:** Este processo pode levar vários minutos, pois ele busca o histórico de centenas de moedas e faz pausas para respeitar o limite de chamadas da API.
 

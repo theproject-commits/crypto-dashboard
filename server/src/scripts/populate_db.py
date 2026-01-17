@@ -1,11 +1,24 @@
 import time
+import sys
 from datetime import datetime, timedelta
+from pathlib import Path
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
-from coingecko_sdk.api import CoinGeckoAPI
+from pycoingecko import CoinGeckoAPI
 
-from ...database import SessionLocal, engine
-from ... import models, schemas, crud
+# Add parent directories to path to allow imports when run as a script
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from database import SessionLocal, engine
+from models import Cryptocurrency, PriceHistory
+from schemas import CryptocurrencyCreate, PriceHistoryCreate
+from crud import (
+    create_cryptocurrency,
+    create_price_history_entry,
+    get_cryptocurrency_by_coingecko_id,
+    get_cryptocurrencies,
+    get_price_history_by_crypto_id_and_date
+)
 
 load_dotenv()
 
@@ -36,16 +49,16 @@ def populate_cryptocurrencies(db: Session):
 
     for crypto_data in markets_data:
         coingecko_id = crypto_data["id"]
-        db_crypto = crud.get_cryptocurrency_by_coingecko_id(db, coingecko_id=coingecko_id)
+        db_crypto = get_cryptocurrency_by_coingecko_id(db, coingecko_id=coingecko_id)
 
         if not db_crypto:
-            crypto_schema = schemas.CryptocurrencyCreate(
+            crypto_schema = CryptocurrencyCreate(
                 coingecko_id=coingecko_id,
                 symbol=crypto_data["symbol"].lower(),
                 name=crypto_data["name"],
                 image_url=crypto_data["image"]
             )
-            crud.create_cryptocurrency(db=db, crypto=crypto_schema)
+            create_cryptocurrency(db=db, crypto=crypto_schema)
             print(f"Added {crypto_data['name']} to database.")
         else:
             # Optionally update existing crypto details if needed
@@ -54,7 +67,7 @@ def populate_cryptocurrencies(db: Session):
 
 def populate_price_history(db: Session, days: int = 365):
     print(f"Populating price history for the last {days} days...")
-    cryptos = crud.get_cryptocurrencies(db)
+    cryptos = get_cryptocurrencies(db)
     
     for crypto in cryptos:
         print(f"Fetching history for {crypto.name} ({crypto.coingecko_id})...")
@@ -66,8 +79,8 @@ def populate_price_history(db: Session, days: int = 365):
             market_chart_data = cg.get_coin_market_chart_range_by_id(
                 id=crypto.coingecko_id,
                 vs_currency="usd",
-                from_timestamp=start_timestamp.timestamp(),
-                to_timestamp=end_timestamp.timestamp()
+                from_timestamp=str(start_timestamp.timestamp()),
+                to_timestamp=str(end_timestamp.timestamp())
             )
         except Exception as e:
             print(f"Error fetching market chart data for {crypto.name}: {e}")
@@ -90,18 +103,18 @@ def populate_price_history(db: Session, days: int = 365):
             entry_date = datetime.fromtimestamp(timestamp_ms / 1000).date()
 
             # Check if this entry already exists for the specific date
-            existing_entry = crud.get_price_history_by_crypto_id_and_date(db, crypto_id=crypto.id, date=entry_date)
+            existing_entry = get_price_history_by_crypto_id_and_date(db, crypto_id=crypto.id, date=entry_date)
             if existing_entry:
                 continue
 
             try:
-                price_data_schema = schemas.PriceHistoryCreate(
+                price_data_schema = PriceHistoryCreate(
                     date=entry_date,
                     price_usd=prices[i][1],
                     market_cap_usd=int(market_caps[i][1]),
                     total_volume_usd=int(total_volumes[i][1])
                 )
-                crud.create_price_history_entry(db=db, price_data=price_data_schema, crypto_id=crypto.id)
+                create_price_history_entry(db=db, price_data=price_data_schema, crypto_id=crypto.id)
             except Exception as e:
                 print(f"Error adding price history for {crypto.name} on {entry_date}: {e}")
         
@@ -111,7 +124,8 @@ def populate_price_history(db: Session, days: int = 365):
 
 def create_tables():
     print("Creating database tables...")
-    models.Base.metadata.create_all(bind=engine)
+    from models import Base
+    Base.metadata.create_all(bind=engine)
     print("Tables created.")
 
 if __name__ == "__main__":

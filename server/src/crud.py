@@ -1,6 +1,11 @@
 from sqlalchemy.orm import Session
-from . import models, schemas
 from datetime import date
+
+try:
+    from . import models, schemas
+except ImportError:
+    import models
+    import schemas
 
 def get_cryptocurrency_by_coingecko_id(db: Session, coingecko_id: str):
     return db.query(models.Cryptocurrency).filter(models.Cryptocurrency.coingecko_id == coingecko_id).first()

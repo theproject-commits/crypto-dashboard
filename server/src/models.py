@@ -1,7 +1,11 @@
 from sqlalchemy import Column, Integer, String, Date, DECIMAL, ForeignKey, BigInteger, TIMESTAMP
 from sqlalchemy.orm import relationship
-from .database import Base
 from sqlalchemy.sql import func
+
+try:
+    from .database import Base
+except ImportError:
+    from database import Base
 
 class Cryptocurrency(Base):
     __tablename__ = "cryptocurrencies"
