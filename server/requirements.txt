@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+python-dotenv
+SQLAlchemy
+psycopg2-binary # For PostgreSQL
+requests
+pandas
+coingecko-sdk
+# Add other statistical/ML libraries later
