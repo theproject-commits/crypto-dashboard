@@ -1,4 +1,4 @@
-# Crypto Dashboard & Prediction
+# TentacleLab & Prediction
 
 Este projeto é um dashboard para visualização de dados de criptomoedas em tempo real, com um roadmap que inclui a implementação de modelos de Machine Learning para predição de valores.
 
@@ -82,6 +82,12 @@ O projeto será desenvolvido utilizando uma arquitetura de monorepo, separando o
 
 ## Testes e Scripts
 
+### Migracoes de Banco (Alembic)
+
+- O backend usa Alembic para versionar mudancas de schema.
+- Para aplicar as migracoes a partir da pasta server, execute: alembic upgrade head
+- Esta revisao altera as colunas price_history.market_cap_usd e price_history.total_volume_usd para DECIMAL(30, 10).
+
 ### Rodando os Testes Unitários
 
 - O projeto usa `pytest` para testes unitários. Os testes são projetados para rodar de forma isolada (com mocks), sem depender da API externa ou de um banco de dados real.
@@ -109,3 +115,12 @@ O projeto será desenvolvido utilizando uma arquitetura de monorepo, separando o
 *(Seções de Modelo de Dados e APIs permanecem as mesmas)...*
 ...
 (O resto do conteúdo do README continua aqui)
+
+
+
+
+
+
+
+
+

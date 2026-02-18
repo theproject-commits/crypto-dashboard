@@ -1,0 +1,1 @@
+eh um projeto para exibir gráficos e fazer predições de criptomoedas.
