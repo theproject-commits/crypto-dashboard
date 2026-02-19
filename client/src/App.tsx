@@ -181,6 +181,7 @@ function App() {
 
   const formatCurrency = (value: number) => currencyFormatter.format(value);
   const formatPercent = (value: number) => `${value.toFixed(2)}%`;
+  const formatSignedPercent = (value: number) => `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
   const formatDateTime = (value: string) => dateTimeFormatter.format(new Date(value));
   const formattedClock = clockFormatter.format(currentTime);
   const formatMinutesAgo = (value: string | null) => {
@@ -646,8 +647,63 @@ function App() {
     const currentPriceRaw = history.length > 0 ? history[history.length - 1].price_usd : null;
     const currentPriceLive = liveByCoin[selectedCrypto.coingecko_id]?.price_usd ?? null;
     const currentPrice = chartRange === 'LIVE' && currentPriceLive !== null ? currentPriceLive : currentPriceRaw;
+    const currentPriceDeltaPercent = (() => {
+      if (selectedPricePoints.length >= 2) {
+        const prev = selectedPricePoints[selectedPricePoints.length - 2].value;
+        const last = selectedPricePoints[selectedPricePoints.length - 1].value;
+        if (prev > 0) return ((last - prev) / prev) * 100;
+      }
+      if (history.length >= 2 && currentPrice !== null) {
+        const prev = history[history.length - 2].price_usd;
+        if (prev > 0) return ((currentPrice - prev) / prev) * 100;
+      }
+      return null;
+    })();
+    const currentPriceDeltaClass =
+      currentPriceDeltaPercent === null
+        ? 'asset-price-change-neutral'
+        : currentPriceDeltaPercent >= 0
+          ? 'trend-up'
+          : 'trend-down';
+    const latestSnapshot = history.length > 0 ? history[history.length - 1] : null;
+    const previousSnapshot = history.length > 1 ? history[history.length - 2] : null;
+    const variation24hPercent =
+      latestSnapshot && previousSnapshot && previousSnapshot.price_usd > 0
+        ? ((latestSnapshot.price_usd - previousSnapshot.price_usd) / previousSnapshot.price_usd) * 100
+        : null;
+    const marketCapCurrent = latestSnapshot?.market_cap_usd ?? null;
+    const volume24hCurrent = latestSnapshot?.total_volume_usd ?? null;
+    const rankingPosition = cryptos.findIndex((item) => item.coingecko_id === selectedCrypto.coingecko_id);
+    const rankingDisplay = rankingPosition >= 0 ? rankingPosition + 1 : null;
     const maxPrice = history.length > 0 ? Math.max(...history.map((entry) => entry.price_usd)) : 0;
     const minPrice = history.length > 0 ? Math.min(...history.map((entry) => entry.price_usd)) : 0;
+    const distanceFromAthPercent =
+      maxPrice > 0 && currentPrice !== null
+        ? ((currentPrice - maxPrice) / maxPrice) * 100
+        : null;
+    const ma200 =
+      history.length >= 200
+        ? history.slice(-200).reduce((sum, entry) => sum + entry.price_usd, 0) / 200
+        : null;
+    const distanceFromMa200Percent =
+      ma200 !== null && ma200 > 0 && currentPrice !== null
+        ? ((currentPrice - ma200) / ma200) * 100
+        : null;
+    const rsi1d = (() => {
+      if (history.length < 15) return null;
+      let gains = 0;
+      let losses = 0;
+      for (let i = history.length - 14; i < history.length; i += 1) {
+        const delta = history[i].price_usd - history[i - 1].price_usd;
+        if (delta >= 0) gains += delta;
+        else losses += Math.abs(delta);
+      }
+      const avgGain = gains / 14;
+      const avgLoss = losses / 14;
+      if (avgLoss === 0) return 100;
+      const rs = avgGain / avgLoss;
+      return 100 - 100 / (1 + rs);
+    })();
     const periodStart = history.length > 0 ? formatDate(history[0].date) : 'N/A';
     const periodEnd = history.length > 0 ? formatDate(history[history.length - 1].date) : 'N/A';
     const formatChartPointLabel = (point: ChartPoint) => {
@@ -745,73 +801,115 @@ function App() {
               </div>
               <div className="asset-price-box">
                 <span className="asset-price-label">Preço atual</span>
-                <strong className="asset-price-value">{currentPrice !== null ? formatCurrency(currentPrice) : 'N/A'}</strong>
+                <div className="asset-price-main">
+                  <strong className="asset-price-value">{currentPrice !== null ? formatCurrency(currentPrice) : 'N/A'}</strong>
+                  {currentPriceDeltaPercent !== null && (
+                    <span className={`asset-price-change ${currentPriceDeltaClass}`}>
+                      {formatSignedPercent(currentPriceDeltaPercent)}
+                    </span>
+                  )}
+                </div>
                 <span className="asset-updated">{lastSyncLabel}</span>
               </div>
             </div>
           </article>
         </section>
 
-        <section className="detail-grid">
-          <article className="crypto-card">
+        <section className="detail-stack">
+          <article className="crypto-card overview-card">
             <h3>Visão Geral</h3>
-            <div className="price-now">
-              <span>Preço atual</span>
-              <strong>{currentPrice !== null ? formatCurrency(currentPrice) : 'N/A'}</strong>
-            </div>
-            <div className="kpi-grid">
-              <div className={`kpi-card ${changePercent >= 2 ? 'is-positive' : changePercent <= -2 ? 'is-negative' : 'is-neutral'}`}>
-                <span className="kpi-label">Variação</span>
-                <strong className="kpi-value">{changePercent.toFixed(2)}%</strong>
+            <p className="overview-period-inline">{periodStart} - {periodEnd}</p>
+            <div className="overview-market-grid">
+              <div className="overview-chip overview-chip-price">
+                <span className="overview-chip-label">Preco</span>
+                <strong className="overview-chip-value overview-price-value">{currentPrice !== null ? formatCurrency(currentPrice) : 'N/A'}</strong>
               </div>
-              <div className={`kpi-card ${history.length > 1000 ? 'is-positive' : 'is-neutral'}`}>
-                <span className="kpi-label with-help">
-                  <span>Pontos</span>
-                  <span className="help-tooltip">
-                    <button type="button" className="help-icon" aria-label="Explicacao de pontos">
-                      ?
-                    </button>
-                    <span className="help-tooltip-bubble" role="tooltip">
-                      Total de candles observados no historico desta moeda no periodo carregado.
+              <div className="overview-chip overview-chip-change">
+                <span className="overview-chip-label">24h</span>
+                <strong className={`overview-chip-value ${variation24hPercent === null ? '' : variation24hPercent >= 0 ? 'trend-up' : 'trend-down'}`}>
+                  {variation24hPercent !== null ? formatSignedPercent(variation24hPercent) : 'N/A'}
+                </strong>
+              </div>
+              <div className="overview-chip overview-chip-subtle">
+                <span className="overview-chip-label">Volume</span>
+                <strong className="overview-chip-value">{volume24hCurrent !== null ? formatCurrency(volume24hCurrent) : 'N/A'}</strong>
+              </div>
+              <div className="overview-chip overview-chip-subtle">
+                <span className="overview-chip-label">MCap</span>
+                <strong className="overview-chip-value">{marketCapCurrent !== null ? formatCurrency(marketCapCurrent) : 'N/A'}</strong>
+              </div>
+              <div className="overview-chip overview-chip-rank">
+                <span className="overview-chip-label">Rank</span>
+                <strong className="overview-chip-value">{rankingDisplay !== null ? `#${rankingDisplay}` : 'N/A'}</strong>
+              </div>
+            </div>
+
+            <div className="overview-cycle-block">
+              <p className="overview-group-title">Ciclo</p>
+              <div className="overview-cycle-grid">
+                <div className="overview-chip overview-cycle-badge">
+                  <span className="overview-chip-label">ATH</span>
+                  <strong className={`overview-chip-value ${distanceFromAthPercent === null ? '' : distanceFromAthPercent >= 0 ? 'trend-up' : 'trend-down'}`}>
+                    {distanceFromAthPercent !== null ? formatSignedPercent(distanceFromAthPercent) : 'N/A'}
+                  </strong>
+                </div>
+                <div className="overview-chip overview-cycle-badge">
+                  <span className="overview-chip-label">MA200</span>
+                  <strong className={`overview-chip-value ${distanceFromMa200Percent === null ? '' : distanceFromMa200Percent >= 0 ? 'trend-up' : 'trend-down'}`}>
+                    {distanceFromMa200Percent !== null ? formatSignedPercent(distanceFromMa200Percent) : 'N/A'}
+                  </strong>
+                </div>
+                <div className="overview-chip overview-cycle-badge">
+                  <span className="overview-chip-label with-help">
+                    <span>RSI</span>
+                    <span className="help-tooltip">
+                      <button type="button" className="help-icon" aria-label="Explicacao de RSI">
+                        ?
+                      </button>
+                      <span className="help-tooltip-bubble" role="tooltip">
+                        RSI calculado no timeframe diario, janela padrao de 14 periodos.
+                      </span>
                     </span>
                   </span>
-                </span>
-                <strong className="kpi-value">{history.length}</strong>
+                  <strong className="overview-chip-value">{rsi1d !== null ? rsi1d.toFixed(0) : 'N/A'}</strong>
+                </div>
               </div>
             </div>
-            <div className="stats-list">
-              <p className="stats-row">
-                <span className="stats-label">Período</span>
-                <span className="stats-value">{periodStart} a {periodEnd}</span>
-              </p>
-              <p className="stats-row">
-                <span className="stats-label">Máximo no período</span>
-                <span className="stats-value">{maxPrice ? formatCurrency(maxPrice) : 'N/A'}</span>
-              </p>
-              <p className="stats-row">
-                <span className="stats-label">Mínimo no período</span>
-                <span className="stats-value">{minPrice ? formatCurrency(minPrice) : 'N/A'}</span>
-              </p>
-              <p className="stats-row">
-                <span className="stats-label">Variação acumulada</span>
-                <span className={`stats-value ${trendClass}`}>{changePercent.toFixed(2)}%</span>
-              </p>
-              <p className="stats-row">
-                <span className="stats-label">Pontos históricos</span>
-                <span className="stats-value">{history.length}</span>
-              </p>
+
+            <div className="overview-history-grid">
+              <div className={`overview-history-main ${changePercent >= 0 ? 'is-positive' : 'is-negative'}`}>
+                <span className="overview-chip-label">Retorno acumulado</span>
+                <strong className="overview-history-value">
+                  <span className="kpi-trend-icon" aria-hidden="true">{changePercent >= 0 ? '\u2191' : '\u2193'}</span>
+                  {formatSignedPercent(changePercent)}
+                </strong>
+                <span className="overview-history-subtle">
+                  Candles <span className="kpi-label-suffix">(1D)</span>: {history.length}
+                </span>
+              </div>
+              <div className="overview-lower-grid">
+                <p className="stats-row overview-stat-row overview-max-row">
+                  <span className="stats-label">Max.</span>
+                  <span className="stats-value">{maxPrice ? formatCurrency(maxPrice) : 'N/A'}</span>
+                </p>
+                <p className="stats-row overview-stat-row overview-min-row">
+                  <span className="stats-label">Min.</span>
+                  <span className="stats-value">{minPrice ? formatCurrency(minPrice) : 'N/A'}</span>
+                </p>
+              </div>
             </div>
           </article>
 
-          <article className="crypto-card">
-            <AnalysisPanel
-              activeDetailTab={activeDetailTab}
-              analysisHorizon={analysisHorizon}
-              onTabChange={handleDetailTabChange}
-              onHorizonChange={handleAnalysisHorizonChange}
-            />
-          </article>
         </section>
+
+        <article className="crypto-card analysis-panel-card">
+          <AnalysisPanel
+            activeDetailTab={activeDetailTab}
+            analysisHorizon={analysisHorizon}
+            onTabChange={handleDetailTabChange}
+            onHorizonChange={handleAnalysisHorizonChange}
+          />
+        </article>
 
         <article className="crypto-card">
           <h3>{activeDetailTab === 'predicao' ? 'Features Técnicas' : activeDetailTab === 'estado' ? 'Estado de Mercado' : activeDetailTab === 'composite' ? 'Composite' : 'Análise'}</h3>
@@ -1134,3 +1232,8 @@ function App() {
 }
 
 export default App;
+
+
+
+
+

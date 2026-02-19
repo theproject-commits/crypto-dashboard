@@ -149,6 +149,27 @@
   line-height: 1.15;
 }
 
+.asset-price-main {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.asset-price-change {
+  font-size: 0.82rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+  line-height: 1.2;
+}
+
+.asset-price-change-neutral {
+  color: var(--muted);
+}
+
 .asset-updated {
   color: var(--muted);
   font-size: 0.82rem;
@@ -165,6 +186,221 @@
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 16px;
   margin-bottom: 18px;
+}
+
+.detail-stack {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.analysis-panel-card {
+  margin-bottom: 16px;
+}
+
+.overview-period-inline {
+  margin: -4px 0 8px;
+  color: var(--muted);
+  opacity: 0.86;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.overview-market-grid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0 0 16px;
+}
+
+.overview-chip-price {
+  grid-column: span 3;
+}
+
+.overview-chip-change {
+  grid-column: span 2;
+}
+
+.overview-chip-subtle {
+  grid-column: span 1;
+}
+
+.overview-chip-rank {
+  grid-column: span 1;
+}
+
+.overview-cycle-block {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-soft);
+  padding: 10px 12px;
+  margin: 0 0 16px;
+}
+
+.overview-group-title {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 0.74rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.overview-cycle-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.overview-chip {
+  padding: 11px 13px;
+  background: var(--surface-soft);
+  border-radius: 12px;
+  display: grid;
+  gap: 3px;
+}
+
+.overview-cycle-badge {
+  border: 1px dashed var(--border);
+  background: var(--surface);
+}
+
+.overview-chip-label {
+  color: var(--muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  font-weight: 600;
+}
+
+.overview-chip-label.with-help {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.overview-chip-value {
+  color: var(--text);
+  font-size: 1.04rem;
+  line-height: 1.2;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.overview-chip-subtle .overview-chip-value {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.overview-chip-rank .overview-chip-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.overview-price-value {
+  font-size: 2.12rem;
+  line-height: 1.06;
+}
+
+.overview-history-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 12px;
+}
+
+.overview-history-main {
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: var(--surface-soft);
+  display: grid;
+  gap: 5px;
+  border: 1px solid transparent;
+}
+
+.overview-history-main.is-positive {
+  background: rgba(22, 163, 74, 0.07);
+  border-color: rgba(22, 163, 74, 0.22);
+}
+
+.overview-history-main.is-negative {
+  background: rgba(239, 68, 68, 0.07);
+  border-color: rgba(239, 68, 68, 0.22);
+}
+
+.overview-history-value {
+  color: var(--text);
+  font-size: 1.36rem;
+  font-weight: 900;
+}
+
+.overview-history-subtle {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.overview-lower-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.overview-stat-row {
+  border-radius: 10px;
+  padding: 11px 12px;
+  background: var(--surface-soft);
+  border-bottom: 0;
+  align-items: center;
+}
+
+.overview-stat-row .stats-value {
+  margin-left: auto;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  font-weight: 900;
+  font-size: 1.03rem;
+  text-shadow: 0 0 0.01px currentColor;
+}
+
+.overview-stat-row .stats-label {
+  opacity: 0.78;
+}
+
+.overview-max-row {
+  background: rgba(22, 163, 74, 0.1);
+}
+
+.overview-min-row {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.kpi-variation.is-positive {
+  border-color: rgba(22, 163, 74, 0.44);
+  background: rgba(22, 163, 74, 0.1);
+}
+
+.kpi-variation.is-negative {
+  border-color: rgba(239, 68, 68, 0.58);
+  background: rgba(239, 68, 68, 0.18);
+}
+
+.kpi-trend-icon {
+  display: inline-block;
+  margin-right: 6px;
+  font-size: 0.95rem;
+}
+
+.kpi-candles .kpi-value {
+  font-size: 1.18rem;
+}
+
+.kpi-label-suffix {
+  font-size: 0.66rem;
+  opacity: 0.82;
+  margin-left: 2px;
 }
 
 .list-toolbar {
@@ -239,7 +475,7 @@
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
   padding: 12px 0;
-  margin: 10px 0 14px;
+  margin: 10px 0 20px;
   color: var(--muted);
 }
 
@@ -821,6 +1057,27 @@ td {
   }
 }
 
+@media (max-width: 900px) {
+  .overview-market-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .overview-chip-price,
+  .overview-chip-change,
+  .overview-chip-subtle,
+  .overview-chip-rank {
+    grid-column: span 1;
+  }
+
+  .overview-cycle-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .overview-history-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 640px) {
   .app-header h1 {
     font-size: 1.5rem;
@@ -855,6 +1112,10 @@ td {
   }
 
   .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .overview-lower-grid {
     grid-template-columns: 1fr;
   }
 
