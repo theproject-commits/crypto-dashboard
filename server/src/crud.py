@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session, joinedload
 from datetime import date, datetime
+from typing import Union
 from pycoingecko import CoinGeckoAPI
 
 try:
@@ -355,7 +356,11 @@ def get_market_composite_v2_history(
         query = query.filter(models.MarketCompositeV2Snapshot.snapshot_date <= end_date)
     return query.order_by(models.MarketCompositeV2Snapshot.snapshot_date.desc()).limit(limit).all()
 
-def populate_price_history_from_coingecko(db: Session, coingecko_id: str, days: int = 30):
+def populate_price_history_from_coingecko(
+    db: Session,
+    coingecko_id: str,
+    days: Union[int, str] = 30,
+):
     """
     Fetches historical price data from CoinGecko and populates the database.
     """
@@ -364,7 +369,14 @@ def populate_price_history_from_coingecko(db: Session, coingecko_id: str, days: 
         return None
 
     try:
-        market_chart = cg.get_coin_market_chart_by_id(id=coingecko_id, vs_currency='usd', days=days)
+        days_arg: Union[int, str]
+        if isinstance(days, str) and days.strip().lower() == "max":
+            days_arg = "max"
+        else:
+            days_arg = int(days)
+            if days_arg <= 0:
+                return False
+        market_chart = cg.get_coin_market_chart_by_id(id=coingecko_id, vs_currency='usd', days=days_arg)
     except Exception:
         return False
 

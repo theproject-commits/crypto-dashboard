@@ -19,5 +19,15 @@ body,
 body {
   margin: 0;
   min-width: 320px;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+
+body.app-theme-light {
   background: linear-gradient(180deg, #f8fafc 0%, #eff6ff 100%);
+  color: #0f172a;
+}
+
+body.app-theme-dark {
+  background: #020617;
+  color: #e2e8f0;
 }

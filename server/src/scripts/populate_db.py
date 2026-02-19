@@ -5,6 +5,7 @@ import logging
 import argparse
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
+from typing import Union
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
 from pycoingecko import CoinGeckoAPI
@@ -44,6 +45,9 @@ DEFAULT_CRYPTOS = {
     "ethereum": {"symbol": "eth", "name": "Ethereum"},
 }
 SUPPORTED_COINS = sorted(DEFAULT_CRYPTOS.keys())
+
+
+HistoryWindow = Union[int, str]
 
 
 def log_event(level: int, event: str, **fields):
@@ -126,7 +130,20 @@ def populate_cryptocurrencies(db: Session, target_coins=None):
             )
     log_event(logging.INFO, "populate_cryptocurrencies.complete")
 
-def populate_price_history(db: Session, days: int = 365, target_coins=None):
+def parse_history_window(raw_days: str) -> HistoryWindow:
+    value = raw_days.strip().lower()
+    if value == "max":
+        return "max"
+    try:
+        parsed = int(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("--days must be an integer or 'max'.") from exc
+    if parsed <= 0:
+        raise argparse.ArgumentTypeError("--days must be greater than zero or 'max'.")
+    return parsed
+
+
+def populate_price_history(db: Session, days: HistoryWindow = 365, target_coins=None):
     if target_coins is None:
         target_coins = SUPPORTED_COINS
     target_coin_set = set(target_coins)
@@ -144,16 +161,22 @@ def populate_price_history(db: Session, days: int = 365, target_coins=None):
             name=crypto.name,
         )
         try:
-            # The SDK handles the timestamp conversion
-            end_timestamp = datetime.now()
-            start_timestamp = end_timestamp - timedelta(days=days)
-
-            market_chart_data = cg.get_coin_market_chart_range_by_id(
-                id=crypto.coingecko_id,
-                vs_currency="usd",
-                from_timestamp=str(start_timestamp.timestamp()),
-                to_timestamp=str(end_timestamp.timestamp())
-            )
+            if days == "max":
+                market_chart_data = cg.get_coin_market_chart_by_id(
+                    id=crypto.coingecko_id,
+                    vs_currency="usd",
+                    days="max",
+                )
+            else:
+                # The SDK handles the timestamp conversion.
+                end_timestamp = datetime.now()
+                start_timestamp = end_timestamp - timedelta(days=days)
+                market_chart_data = cg.get_coin_market_chart_range_by_id(
+                    id=crypto.coingecko_id,
+                    vs_currency="usd",
+                    from_timestamp=str(start_timestamp.timestamp()),
+                    to_timestamp=str(end_timestamp.timestamp()),
+                )
         except Exception as e:
             log_event(
                 logging.ERROR,
@@ -326,9 +349,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--days",
-        type=int,
+        type=parse_history_window,
         default=365,
-        help="History window in days when provider=coingecko.",
+        help="History window when provider=coingecko. Use an integer (ex: 365) or 'max' for full lifetime.",
     )
     parser.add_argument(
         "--clear",
